@@ -1,0 +1,1 @@
+# karaf-rest-example
