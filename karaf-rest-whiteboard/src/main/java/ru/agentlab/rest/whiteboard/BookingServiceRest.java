@@ -38,6 +38,14 @@ import java.util.Map;
 public class BookingServiceRest implements BookingService {
     
     private final Map<Long, Booking> bookings = new HashMap<>();
+	
+	public BookingServiceRest(){
+		bookings.put(1L, new Booking() {{
+			setId(1L);
+			setCustomer("sdfsdf");
+			setFlight("werewr");
+		}});
+	}
 
     @Override
     @Path("/")
