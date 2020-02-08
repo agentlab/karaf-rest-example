@@ -16,10 +16,9 @@
  */
 package ru.agentlab.rest.whiteboard;
 
-import org.osgi.service.component.annotations.Component;
-
-import ru.agentlab.karaf.rest.api.Booking;
-import ru.agentlab.karaf.rest.api.BookingService;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,23 +28,34 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import javax.ws.rs.ext.Provider;
+
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+
+import ru.agentlab.jwt.service.IJwtService;
+import ru.agentlab.karaf.rest.api.Booking;
+import ru.agentlab.karaf.rest.api.BookingService;
 
 @Path("/booking")
+@Provider
 @Component(service = BookingServiceRest.class, property = { "osgi.jaxrs.resource=true" })
 public class BookingServiceRest implements BookingService {
-    
+
     private final Map<Long, Booking> bookings = new HashMap<>();
-	
-	public BookingServiceRest(){
-		bookings.put(1L, new Booking() {{
-			setId(1L);
-			setCustomer("sdfsdf");
-			setFlight("werewr");
-		}});
-	}
+
+    @Reference
+    private IJwtService jwtTokenService;
+
+    public BookingServiceRest() {
+        bookings.put(1L, new Booking() {
+            {
+                setId(1L);
+                setCustomer("sdfsdf");
+                setFlight("werewr");
+            }
+        });
+    }
 
     @Override
     @Path("/")
@@ -62,7 +72,7 @@ public class BookingServiceRest implements BookingService {
     public Booking get(@PathParam("id") Long id) {
         return bookings.get(id);
     }
-    
+
     @Override
     @Path("/")
     @Consumes("application/json")

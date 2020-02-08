@@ -22,7 +22,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-	
+
 	<artifactId>karaf-rest-api</artifactId>
 	<name>Apache Karaf :: AgentLab :: REST :: API</name>
 	<packaging>bundle</packaging>

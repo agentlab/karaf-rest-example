@@ -47,6 +47,11 @@
 			<artifactId>karaf-rest-api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>ru.agentlab</groupId>
+			<artifactId>ru.agentlab.jwt.service</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 	</dependencies>
 
 	<build>
