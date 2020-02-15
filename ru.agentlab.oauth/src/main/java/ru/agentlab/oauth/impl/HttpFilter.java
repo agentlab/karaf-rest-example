@@ -34,7 +34,7 @@ public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<JwtEx
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
 
-        if (!uriInfo.getPath().contains("oauth/login")) {
+        if (!uriInfo.getPath().contains("oauth2/token")) {
             if (!jwtService.isValid(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION))) {
                 requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
             }

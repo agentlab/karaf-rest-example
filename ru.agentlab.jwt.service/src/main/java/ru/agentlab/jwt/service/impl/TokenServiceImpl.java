@@ -57,7 +57,7 @@ public class TokenServiceImpl implements IJwtService {
             jwtProcessor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, keySource));
             this.jwtProcessor = jwtProcessor;
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage(), e);
         }
     }
 
