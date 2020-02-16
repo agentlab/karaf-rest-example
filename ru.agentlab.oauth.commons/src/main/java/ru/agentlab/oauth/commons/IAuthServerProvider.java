@@ -1,10 +1,14 @@
 package ru.agentlab.oauth.commons;
 
+import java.net.URI;
+
 public interface IAuthServerProvider {
 
-    String getServeBaserUrl();
+    URI getServeBaserUrl();
 
-    String getServerJwksUrl();
+    URI getServerJwksUrl();
 
-    String getTokenUrl();
+    URI getTokenUrl();
+
+    URI getTokenIntrospectUrl();
 }

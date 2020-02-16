@@ -43,8 +43,7 @@ public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<JwtEx
 
     @Override
     public Response toResponse(JwtException exception) {
-        LOGGER.info(exception.getMessage(), exception);
+        LOGGER.info(exception.getMessage());
         return Response.status(Response.Status.UNAUTHORIZED).build();
     }
-
 }

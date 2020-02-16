@@ -52,7 +52,7 @@ public class TokenServiceImpl implements IJwtService {
     public void activate() {
         try {
             ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
-            JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(new URL(authServerProvider.getServerJwksUrl()),
+            JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(authServerProvider.getServerJwksUrl().toURL(),
                     new JwkResourceRetriever());
             jwtProcessor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, keySource));
             this.jwtProcessor = jwtProcessor;

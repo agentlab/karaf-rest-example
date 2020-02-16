@@ -1,6 +1,8 @@
 package ru.agentlab.oauth.commons.impl;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
@@ -20,19 +22,36 @@ public class Wso2Provider implements IAuthServerProvider {
 
     private static final String TOKEN_ENDPOINT = WSO2_URL + "/oauth2/token";
 
+    private static final String TOKEN_INTROSPECT_ENDPOINT = WSO2_URL + "/oauth2/introspect";
+
     @Override
-    public String getServeBaserUrl() {
-        return WSO2_URL;
+    public URI getServeBaserUrl() {
+        return getUri(WSO2_URL);
     }
 
     @Override
-    public String getServerJwksUrl() {
-        return JWKS_ENDPOINT;
+    public URI getServerJwksUrl() {
+        return getUri(JWKS_ENDPOINT);
     }
 
     @Override
-    public String getTokenUrl() {
-        return TOKEN_ENDPOINT;
+    public URI getTokenUrl() {
+        return getUri(TOKEN_ENDPOINT);
+    }
+
+    @Override
+    public URI getTokenIntrospectUrl() {
+        return getUri(TOKEN_INTROSPECT_ENDPOINT);
+    }
+
+    private URI getUri(String uri) {
+        try {
+            return new URI(uri);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     private static <T> T getEnv(String key, Class<T> clazz, T def) {
