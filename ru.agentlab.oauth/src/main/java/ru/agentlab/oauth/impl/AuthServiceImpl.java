@@ -5,18 +5,19 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.osgi.service.component.annotations.Component;
@@ -27,23 +28,20 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+import com.nimbusds.oauth2.sdk.ErrorObject;
+import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.RefreshTokenGrant;
 import com.nimbusds.oauth2.sdk.ResourceOwnerPasswordCredentialsGrant;
 import com.nimbusds.oauth2.sdk.Scope;
-import com.nimbusds.oauth2.sdk.TokenErrorResponse;
-import com.nimbusds.oauth2.sdk.TokenIntrospectionRequest;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
-import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
-import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
-import com.nimbusds.oauth2.sdk.token.Token;
 import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 
 import ru.agentlab.oauth.IAuthService;
@@ -69,7 +67,7 @@ public class AuthServiceImpl implements IAuthService {
         ClientID clientId = new ClientID(getEnv("CLIENT_ID", "SdQOGBYwEC0rVNYGBWBByxrEQuca"));
         Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "tBXDHx2riibj_U3dXOIvhZKRPPIa"));
 
-        standartScopes = new Scope(OIDCScopeValue.values());
+        standartScopes = new Scope(OIDCScopeValue.OPENID);
 
         clientAuth = new ClientSecretBasic(clientId, clientSecret);
 
@@ -78,29 +76,52 @@ public class AuthServiceImpl implements IAuthService {
 
     @Override
     @POST
-    @Path("/token:loginPassword")
+    @Path("/token")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response authenticateByLoginAndPassword(@FormParam("username") String username,
-            @FormParam("password") String password, @FormParam("scope") String[] scopes) {
+    public Response grantOperation(Form form) {
+        MultivaluedMap<String, String> formParams = form.asMap();
+
+        List<String> grantTypes = formParams.get("grant_type");
+
+        if (grantTypes == null || grantTypes.isEmpty() || grantTypes.size() > 2) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        GrantType grantType = null;
+
+        try {
+            grantType = GrantType.parse(grantTypes.get(0));
+        } catch (ParseException e) {
+            LOGGER.error(e.getMessage(), e);
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        if (grantType.equals(GrantType.PASSWORD)) {
+            return clientCredentialsGrantFlow(form);
+        } else if (grantType.equals(GrantType.REFRESH_TOKEN)) {
+            return refreshTokenGrantFlow(form);
+        }
+
+        return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+
+    private Response clientCredentialsGrantFlow(Form form) {
+        String username = form.asMap().getFirst("username");
+        String password = form.asMap().getFirst("password");
 
         if (isBadRequest(username, password)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        Scope requestScopes = isEmptyScopes(scopes) ? standartScopes : new Scope(scopes);
-
         AuthorizationGrant passwordGrant = new ResourceOwnerPasswordCredentialsGrant(username, new Secret(password));
 
-        return performAuthorizationGrantOperation(passwordGrant, requestScopes);
+        return performAuthorizationGrantOperation(passwordGrant, getRequestedScopes(form));
+
     }
 
-    @Override
-    @POST
-    @Path("/token:refresh")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response refreshToken(@FormParam("refresh_token") String refreshToken) {
+    private Response refreshTokenGrantFlow(Form form) {
+        String refreshToken = form.asMap().getFirst("refresh_token");
 
         if (isBadRequest(refreshToken)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -109,62 +130,23 @@ public class AuthServiceImpl implements IAuthService {
         return performAuthorizationGrantOperation(new RefreshTokenGrant(new RefreshToken(refreshToken)), null);
     }
 
-    @Override
-    @POST
-    @Path("/token:introspect")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response introspectToken(@FormParam("token") String token,
-            @FormParam("token_type_hint") String token_type_hint) {
+    private Scope getRequestedScopes(Form form) {
 
-        Optional<Token> optionalToken = getToken(token, token_type_hint);
+        List<String> scope = form.asMap().get("scope");
+        Scope scopes = new Scope();
 
-        if (!optionalToken.isPresent()) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+        if (scope != null) {
+            scope.forEach(sc -> scopes.add(sc));
+        } else {
+            scopes.addAll(standartScopes);
         }
 
-        TokenIntrospectionRequest introspectionRequest = new TokenIntrospectionRequest(
-                authServerProvider.getTokenIntrospectUrl(), optionalToken.get());
-
-        HTTPResponse httpResponse = null;
-
-        try {
-            httpResponse = introspectionRequest.toHTTPRequest().send();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-        }
-
-        return Response.status(httpResponse.getStatusCode()).entity(httpResponse.getContent()).build();
+        return scopes;
     }
 
     private static String getEnv(String key, String defValue) {
         String value = System.getenv(key);
         return value != null ? value : defValue;
-    }
-
-    private boolean isEmptyScopes(String[] scopes) {
-        if (scopes == null || scopes.length == 0) {
-            return true;
-        }
-        return false;
-    }
-
-    private Optional<Token> getToken(String token, String token_type_hint) {
-
-        if (isBadRequest(token, token_type_hint))
-            return Optional.empty();
-
-        if ("access_token".equals(token_type_hint)) {
-            return Optional.of(new BearerAccessToken(token));
-
-        } else if ("refresh_token".equals(token_type_hint)) {
-            return Optional.of(new RefreshToken(token));
-        }
-
-        return Optional.empty();
-
     }
 
     private Response performAuthorizationGrantOperation(AuthorizationGrant grant, Scope scopes) {
@@ -180,11 +162,9 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         if (!response.indicatesSuccess()) {
-            TokenErrorResponse errorResponse = response.toErrorResponse();
+            ErrorObject error = response.toErrorResponse().getErrorObject();
 
-            LOGGER.info(errorResponse.toErrorResponse().toJSONObject().toString());
-
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return Response.status(error.getHTTPStatusCode()).entity(error.toJSONObject().toString()).build();
         }
 
         AccessTokenResponse successResponse = response.toSuccessResponse();

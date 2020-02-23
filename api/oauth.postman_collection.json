@@ -11,18 +11,39 @@
 				"method": "POST",
 				"header": [],
 				"body": {
-					"mode": "raw",
-					"raw": "password=testuser&grant_type=password&username=testuser&scope=openid"
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "password",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "testuser",
+							"type": "text"
+						},
+						{
+							"key": "username",
+							"value": "testuser",
+							"type": "text"
+						},
+						{
+							"key": "scope",
+							"value": "openid",
+							"type": "text"
+						}
+					]
 				},
 				"url": {
-					"raw": "localhost:8181/oauth2/token:loginPassword",
+					"raw": "localhost:8181/oauth2/token",
 					"host": [
 						"localhost"
 					],
 					"port": "8181",
 					"path": [
 						"oauth2",
-						"token:loginPassword"
+						"token"
 					]
 				}
 			},
@@ -32,26 +53,31 @@
 			"name": "refresh token",
 			"request": {
 				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/x-www-form-urlencoded",
-						"type": "text"
-					}
-				],
+				"header": [],
 				"body": {
-					"mode": "raw",
-					"raw": "refresh_token=04ab43b8-e469-366e-8767-bac513a0cbcd"
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "refresh_token",
+							"type": "text"
+						},
+						{
+							"key": "refresh_token",
+							"value": "ac7cf328-73f9-3781-afeb-198c0a1b3308",
+							"type": "text"
+						}
+					]
 				},
 				"url": {
-					"raw": "localhost:8181/oauth2/token:refresh",
+					"raw": "localhost:8181/oauth2/token",
 					"host": [
 						"localhost"
 					],
 					"port": "8181",
 					"path": [
 						"oauth2",
-						"token:refresh"
+						"token"
 					]
 				}
 			},
