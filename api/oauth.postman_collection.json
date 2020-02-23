@@ -1,0 +1,86 @@
+{
+	"info": {
+		"_postman_id": "c9d5e713-2d60-4a93-9250-f95a955bf063",
+		"name": "oauth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "login by password",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "password=testuser&grant_type=password&username=testuser&scope=openid"
+				},
+				"url": {
+					"raw": "localhost:8181/oauth2/token:loginPassword",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"oauth2",
+						"token:loginPassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refresh token",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "refresh_token=04ab43b8-e469-366e-8767-bac513a0cbcd"
+				},
+				"url": {
+					"raw": "localhost:8181/oauth2/token:refresh",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"oauth2",
+						"token:refresh"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "example",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ4NXQiOiJaalJtWVRNd0USmpPV1U1TW1Jek1qZ3pOREkzWTJJeU1tSXlZMkV6TWpkaFpqVmlNamMwWmciLCJraWQiOiJaalJtWVRNd05USmpPV1U1TW1Jek1qZ3pOREkzWTJJeU1tSXlZMkV6TWpkaFpqVmlNamMwWmdfUlMyNTYiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImF1ZCI6IjJkdnc5c0VfbGw4MWFLUXM5MzhIXzV5QVNPY2EiLCJuYmYiOjE1ODExOTAwNjAsImF6cCI6IjJkdnc5c0VfbGw4MWFLUXM5MzhIXzV5QVNPY2EiLCJpc3MiOiJodHRwczpcL1wvbG9jYWxob3N0Ojk0NDNcL29hdXRoMlwvdG9rZW4iLCJleHAiOjE1ODExOTM2NjAsImlhdCI6MTU4MTE5MDA2MCwianRpIjoiZTY2N2IzZWMtMzBiZi00YzgxLWI3MjgtNWM1MjI2NGJlMTZlIn0.LmNtVmGloZHcRuV3pZellfeY6dkZy8l0mlVVbJDvi5woyV-0PvCGAXB7BGoRC-2mGliJmw7rbFTIC-ZP-r05ZAFo_e_1TzHG69Bjqd48VaXhbQOlZme45XMCYa3bb2RnACrVV33Q6QcttWei9iUzXtkU-4ooioRG_P1eFFEMtCAwzYYEa1WwYc4leuDw2kohEiwkTTHiZyB5aqNKZ2p0j2EKM35yuq6z184psL6sdeW6xzKA2CHd_CgfD7yUJSsaqHtSz_dUWkpABiJWCi4_G9UR7yPIznXPviDzZojR7nntiFiSBC-g3wuQ7Uh07NInoEKjKtDUvL7Bxa2NpLv19g",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:8181/booking",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"booking"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

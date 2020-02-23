@@ -31,9 +31,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.ext.Provider;
 
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
-import ru.agentlab.jwt.service.IJwtService;
 import ru.agentlab.karaf.rest.api.Booking;
 import ru.agentlab.karaf.rest.api.BookingService;
 
@@ -43,9 +41,6 @@ import ru.agentlab.karaf.rest.api.BookingService;
 public class BookingServiceRest implements BookingService {
 
     private final Map<Long, Booking> bookings = new HashMap<>();
-
-    @Reference
-    private IJwtService jwtTokenService;
 
     public BookingServiceRest() {
         bookings.put(1L, new Booking() {

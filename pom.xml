@@ -29,16 +29,16 @@
         <module>ru.agentlab.jwt.service</module>
         <module>ru.agentlab.oauth</module>
         <module>ru.agentlab.oauth.commons</module>
+        <module>ru.agentlab.security</module>
     </modules>
 
     <properties>
-        <jackson.version>2.9.4</jackson.version>
+        <jackson.version>2.10.2</jackson.version>
         <maven-bundle-plugin.version>2.5.4</maven-bundle-plugin.version>
         <osgi.version>6.0.0</osgi.version>
         <felix.plugin.version>4.1.0</felix.plugin.version>
         <servicemix-spec.version>2.9.0</servicemix-spec.version>
         <jackson.version>2.10.2</jackson.version>
-        <jose4j.version>0.7.0</jose4j.version>
         <apache.commons-lang3.version>3.9</apache.commons-lang3.version>
         <guava.version>23.0</guava.version>
         <apache.httpclient.version>4.5.11</apache.httpclient.version>
@@ -53,6 +53,8 @@
         <oauth2-oidc-sdk.version>6.23</oauth2-oidc-sdk.version>
         <com.nimbusds.lang-tag.version>1.4.4</com.nimbusds.lang-tag.version>
         <javax.mail-api.version>1.6.2</javax.mail-api.version>
+        <shiro-core.version>1.5.0</shiro-core.version>
+        <sl4j.version>1.5.0</sl4j.version>
     </properties>
 
     <dependencyManagement>
@@ -77,11 +79,10 @@
                 <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
-
             <dependency>
-                <groupId>org.bitbucket.b_c</groupId>
-                <artifactId>jose4j</artifactId>
-                <version>${jose4j.version}</version>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
 
             <dependency>
@@ -158,6 +159,18 @@
                 <artifactId>javax.mail-api</artifactId>
                 <version>${javax.mail-api.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.shiro</groupId>
+                <artifactId>shiro-core</artifactId>
+                <version>${shiro-core.version}</version>
+            </dependency>
+
+			<dependency>
+			    <groupId>org.slf4j</groupId>
+			    <artifactId>slf4j-api</artifactId>
+			    <version>${sl4j.version}</version>
+			</dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -169,7 +182,7 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
-                    <maxmem>256M</maxmem>
+                    <maxmem>512M</maxmem>
                     <fork>${compiler.fork}</fork>
                 </configuration>
             </plugin>

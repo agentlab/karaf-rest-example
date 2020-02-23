@@ -23,8 +23,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>ru.agentlab.oauth.commons</artifactId>
-    <name>Apache Karaf :: AgentLab :: OAUTH commons</name>
+    <artifactId>ru.agentlab.security</artifactId>
+    <name>Apache Karaf :: AgentLab :: SECURITY</name>
     <packaging>bundle</packaging>
 
 
@@ -51,15 +51,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
@@ -67,25 +58,22 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>nimbus-jose-jwt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.crypto.tink</groupId>
-            <artifactId>tink</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>oauth2-oidc-sdk</artifactId>
-            <classifier>jdk8</classifier>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency> 
+            <groupId>ru.agentlab</groupId>
+            <artifactId>ru.agentlab.jwt.service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.shiro</groupId>
+            <artifactId>shiro-core</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -99,7 +87,7 @@
                             *
                         </Import-Package>
                         <Private-Package>
-                            ru.agentlab.oauth.commons.impl
+                            ru.agentlab.security.impl
                         </Private-Package>
                     </instructions>
                 </configuration>

@@ -11,22 +11,24 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import org.apache.shiro.authc.AuthenticationException;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ru.agentlab.jwt.service.IJwtService;
-import ru.agentlab.jwt.service.JwtException;
+import com.google.common.base.Strings;
+
+import ru.agentlab.security.ISecurityService;
 
 @Component(property = { "osgi.jaxrs.extension=true" })
 @Provider
-public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<JwtException> {
+public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<AuthenticationException> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpFilter.class);
 
     @Reference
-    private IJwtService jwtService;
+    private ISecurityService securityService;
 
     @Context
     private UriInfo uriInfo;
@@ -35,15 +37,18 @@ public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<JwtEx
     public void filter(ContainerRequestContext requestContext) throws IOException {
 
         if (!uriInfo.getPath().contains("oauth2/token")) {
-            if (!jwtService.isValid(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION))) {
+            String accessToken = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
+            if (!Strings.isNullOrEmpty(accessToken)) {
+                securityService.setSubject(accessToken);
+            } else {
                 requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
             }
         }
     }
 
     @Override
-    public Response toResponse(JwtException exception) {
-        LOGGER.info(exception.getMessage());
+    public Response toResponse(AuthenticationException exception) {
+        LOGGER.error(exception.getMessage(), exception);
         return Response.status(Response.Status.UNAUTHORIZED).build();
     }
 }
