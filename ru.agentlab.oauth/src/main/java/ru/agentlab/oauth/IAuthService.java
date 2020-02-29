@@ -6,4 +6,6 @@ import javax.ws.rs.core.Response;
 public interface IAuthService {
 
     Response grantOperation(Form form);
+
+    Response getDeviceGrantInfo(Form form);
 }

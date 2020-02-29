@@ -36,7 +36,7 @@ public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<Authe
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
 
-        if (!uriInfo.getPath().contains("oauth2/token")) {
+        if (!uriInfo.getPath().contains("oauth2/")) {
             String accessToken = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
             if (!Strings.isNullOrEmpty(accessToken)) {
                 securityService.setSubject(accessToken);

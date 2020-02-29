@@ -11,4 +11,6 @@ public interface IAuthServerProvider {
     URI getTokenUrl();
 
     URI getTokenIntrospectUrl();
+
+    URI getDeviceAuthorizationEndpoint();
 }

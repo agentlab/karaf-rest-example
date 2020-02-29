@@ -1,11 +1,14 @@
 package ru.agentlab.oauth.impl;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -20,6 +23,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.message.BasicNameValuePair;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -39,6 +48,8 @@ import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.device.DeviceCode;
+import com.nimbusds.oauth2.sdk.device.DeviceCodeGrant;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
@@ -54,6 +65,8 @@ public class AuthServiceImpl implements IAuthService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceImpl.class);
 
+    ClientID clientId = new ClientID(getEnv("CLIENT_ID", "iZ04i_h11Xt0cIwK_SSfYjgup3Ea"));
+
     private final ClientAuthentication clientAuth;
 
     private final Scope standartScopes;
@@ -64,8 +77,7 @@ public class AuthServiceImpl implements IAuthService {
     private IHttpClientProvider httpClientProvider;
 
     public AuthServiceImpl() {
-        ClientID clientId = new ClientID(getEnv("CLIENT_ID", "SdQOGBYwEC0rVNYGBWBByxrEQuca"));
-        Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "tBXDHx2riibj_U3dXOIvhZKRPPIa"));
+        Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "BQcD7CcPH6AfOvZ83TqVhMl3ezYa"));
 
         standartScopes = new Scope(OIDCScopeValue.OPENID);
 
@@ -97,10 +109,30 @@ public class AuthServiceImpl implements IAuthService {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        if (grantType.equals(GrantType.PASSWORD)) {
+        if (GrantType.PASSWORD.equals(grantType)) {
             return clientCredentialsGrantFlow(form);
-        } else if (grantType.equals(GrantType.REFRESH_TOKEN)) {
+        } else if (GrantType.REFRESH_TOKEN.equals(grantType)) {
             return refreshTokenGrantFlow(form);
+        } else if (GrantType.DEVICE_CODE.equals(grantType)) {
+            return deviceGrantFlow(form);
+        } else if (GrantType.AUTHORIZATION_CODE.equals(grantType)) {
+            return deviceGrantFlow(form);
+        }
+
+        return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+
+    @Override
+    @POST
+    @Path("/device_authorize")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDeviceGrantInfo(Form form) {
+
+        Optional<String> info = getDeviceCodeInfo(form);
+
+        if (info.isPresent()) {
+            return Response.ok().entity(info.get()).build();
         }
 
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -130,6 +162,28 @@ public class AuthServiceImpl implements IAuthService {
         return performAuthorizationGrantOperation(new RefreshTokenGrant(new RefreshToken(refreshToken)), null);
     }
 
+    private Response deviceGrantFlow(Form form) {
+        String deviceCode = form.asMap().getFirst(GrantType.DEVICE_CODE.getValue());
+
+        if (isBadRequest(deviceCode)) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        AuthorizationGrant deviceGrant = new DeviceCodeGrant(new DeviceCode(deviceCode));
+
+        return performAuthorizationGrantOperation(deviceGrant, getRequestedScopes(form));
+    }
+
+    private Response authorizationCodeGrantFlow(Form form) {
+        String refreshToken = form.asMap().getFirst("refresh_token");
+
+        if (isBadRequest(refreshToken)) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        return performAuthorizationGrantOperation(new RefreshTokenGrant(new RefreshToken(refreshToken)), null);
+    }
+
     private Scope getRequestedScopes(Form form) {
 
         List<String> scope = form.asMap().get("scope");
@@ -142,6 +196,31 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         return scopes;
+    }
+
+    private Optional<String> getDeviceCodeInfo(Form form) {
+        HttpPost httpPost = new HttpPost(authServerProvider.getDeviceAuthorizationEndpoint());
+
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("scope", getRequestedScopes(form).toString()));
+        params.add(new BasicNameValuePair("client_id", clientId.getValue()));
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(params));
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+
+        try (CloseableHttpResponse response = httpClientProvider.getClient().execute(httpPost)) {
+            if (response.getStatusLine().getStatusCode() == Response.Status.OK.getStatusCode()) {
+                String responseString = new BasicResponseHandler().handleResponse(response);
+                return Optional.ofNullable(responseString);
+            }
+
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+
+        return Optional.empty();
     }
 
     private static String getEnv(String key, String defValue) {
