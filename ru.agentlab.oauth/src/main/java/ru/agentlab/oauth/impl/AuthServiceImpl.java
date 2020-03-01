@@ -46,14 +46,13 @@ import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
-import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretPost;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.device.DeviceCode;
 import com.nimbusds.oauth2.sdk.device.DeviceCodeGrant;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
-import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 
 import ru.agentlab.oauth.IAuthService;
 import ru.agentlab.oauth.commons.IAuthServerProvider;
@@ -65,11 +64,9 @@ public class AuthServiceImpl implements IAuthService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    ClientID clientId = new ClientID(getEnv("CLIENT_ID", "iZ04i_h11Xt0cIwK_SSfYjgup3Ea"));
+    ClientID clientId = new ClientID(getEnv("CLIENT_ID", "7Ctbb27JfwvWYo4fSiMgTX77VEEa"));
 
     private final ClientAuthentication clientAuth;
-
-    private final Scope standartScopes;
 
     @Reference
     private IAuthServerProvider authServerProvider;
@@ -77,11 +74,9 @@ public class AuthServiceImpl implements IAuthService {
     private IHttpClientProvider httpClientProvider;
 
     public AuthServiceImpl() {
-        Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "BQcD7CcPH6AfOvZ83TqVhMl3ezYa"));
+        Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "kdUKTveseZDaQx4APYcUk8nowzYa"));
 
-        standartScopes = new Scope(OIDCScopeValue.OPENID);
-
-        clientAuth = new ClientSecretBasic(clientId, clientSecret);
+        clientAuth = new ClientSecretPost(clientId, clientSecret);
 
         disableSSLVerification();
     }
@@ -191,8 +186,6 @@ public class AuthServiceImpl implements IAuthService {
 
         if (scope != null) {
             scope.forEach(sc -> scopes.add(sc));
-        } else {
-            scopes.addAll(standartScopes);
         }
 
         return scopes;
