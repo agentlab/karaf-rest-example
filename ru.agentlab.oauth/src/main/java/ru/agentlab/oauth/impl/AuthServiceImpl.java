@@ -41,11 +41,13 @@ import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.RefreshTokenGrant;
 import com.nimbusds.oauth2.sdk.ResourceOwnerPasswordCredentialsGrant;
+import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
@@ -55,6 +57,9 @@ import com.nimbusds.oauth2.sdk.device.DeviceCode;
 import com.nimbusds.oauth2.sdk.device.DeviceCodeGrant;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.State;
+import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
+import com.nimbusds.oauth2.sdk.pkce.CodeVerifier;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 
 import ru.agentlab.oauth.IAuthService;
@@ -174,6 +179,7 @@ public class AuthServiceImpl implements IAuthService {
     private Response authorizationCodeGrantFlow(Form form) {
         String code = form.asMap().getFirst("code");
         String redirectUriRaw = form.asMap().getFirst("redirect_uri");
+        String codeChallenge = form.asMap().getFirst("code_challenge");
 
         if (isBadRequest(code, redirectUriRaw)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -188,8 +194,10 @@ public class AuthServiceImpl implements IAuthService {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        return performAuthorizationGrantOperation(new AuthorizationCodeGrant(new AuthorizationCode(code), redirectUri),
-                null);
+        CodeVerifier codeVerifier = codeChallenge != null ? new CodeVerifier(codeChallenge) : null;
+
+        return performAuthorizationGrantOperation(
+                new AuthorizationCodeGrant(new AuthorizationCode(code), redirectUri, codeVerifier), null);
     }
 
     private Scope getRequestedScopes(Form form) {
