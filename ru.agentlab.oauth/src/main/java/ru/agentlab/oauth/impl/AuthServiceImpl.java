@@ -3,6 +3,8 @@ package ru.agentlab.oauth.impl;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -36,6 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
+import com.nimbusds.oauth2.sdk.AuthorizationCode;
+import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
@@ -45,7 +49,6 @@ import com.nimbusds.oauth2.sdk.ResourceOwnerPasswordCredentialsGrant;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
-import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretPost;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.device.DeviceCode;
@@ -64,7 +67,7 @@ public class AuthServiceImpl implements IAuthService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    private final ClientAuthentication clientAuth;
+    private final ClientSecretPost clientAuth;
 
     @Reference
     private IAuthServerProvider authServerProvider;
@@ -72,8 +75,8 @@ public class AuthServiceImpl implements IAuthService {
     private IHttpClientProvider httpClientProvider;
 
     public AuthServiceImpl() {
-        Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "kdUKTveseZDaQx4APYcUk8nowzYa"));
-        ClientID clientId = new ClientID(getEnv("CLIENT_ID", "7Ctbb27JfwvWYo4fSiMgTX77VEEa"));
+        ClientID clientId = new ClientID(getEnv("CLIENT_ID", "Ynio_EuYVk8j2gn_6nUbIVQbj_Aa"));
+        Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "fTJGvvfJjUkWvn8R_NY8zXSyYQ0a"));
 
         clientAuth = new ClientSecretPost(clientId, clientSecret);
 
@@ -110,7 +113,7 @@ public class AuthServiceImpl implements IAuthService {
         } else if (GrantType.DEVICE_CODE.equals(grantType)) {
             return deviceGrantFlow(form);
         } else if (GrantType.AUTHORIZATION_CODE.equals(grantType)) {
-            return deviceGrantFlow(form);
+            return authorizationCodeGrantFlow(form);
         }
 
         return Response.status(Response.Status.BAD_REQUEST).build();
@@ -169,13 +172,24 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     private Response authorizationCodeGrantFlow(Form form) {
-        String refreshToken = form.asMap().getFirst("refresh_token");
+        String code = form.asMap().getFirst("code");
+        String redirectUriRaw = form.asMap().getFirst("redirect_uri");
 
-        if (isBadRequest(refreshToken)) {
+        if (isBadRequest(code, redirectUriRaw)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        return performAuthorizationGrantOperation(new RefreshTokenGrant(new RefreshToken(refreshToken)), null);
+        URI redirectUri;
+
+        try {
+            redirectUri = new URI(redirectUriRaw);
+        } catch (URISyntaxException e) {
+            LOGGER.error(e.getMessage(), e);
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        return performAuthorizationGrantOperation(new AuthorizationCodeGrant(new AuthorizationCode(code), redirectUri),
+                null);
     }
 
     private Scope getRequestedScopes(Form form) {
@@ -196,6 +210,8 @@ public class AuthServiceImpl implements IAuthService {
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("scope", getRequestedScopes(form).toString()));
         params.add(new BasicNameValuePair("client_id", clientAuth.getClientID().getValue()));
+        params.add(new BasicNameValuePair("client_secret", clientAuth.getClientSecret().getValue()));
+
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(params));
         } catch (UnsupportedEncodingException e) {
