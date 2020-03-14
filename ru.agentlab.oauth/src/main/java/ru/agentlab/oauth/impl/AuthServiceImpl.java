@@ -64,8 +64,6 @@ public class AuthServiceImpl implements IAuthService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    ClientID clientId = new ClientID(getEnv("CLIENT_ID", "7Ctbb27JfwvWYo4fSiMgTX77VEEa"));
-
     private final ClientAuthentication clientAuth;
 
     @Reference
@@ -75,6 +73,7 @@ public class AuthServiceImpl implements IAuthService {
 
     public AuthServiceImpl() {
         Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "kdUKTveseZDaQx4APYcUk8nowzYa"));
+        ClientID clientId = new ClientID(getEnv("CLIENT_ID", "7Ctbb27JfwvWYo4fSiMgTX77VEEa"));
 
         clientAuth = new ClientSecretPost(clientId, clientSecret);
 
@@ -196,7 +195,7 @@ public class AuthServiceImpl implements IAuthService {
 
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("scope", getRequestedScopes(form).toString()));
-        params.add(new BasicNameValuePair("client_id", clientId.getValue()));
+        params.add(new BasicNameValuePair("client_id", clientAuth.getClientID().getValue()));
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(params));
         } catch (UnsupportedEncodingException e) {

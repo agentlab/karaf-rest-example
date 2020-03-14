@@ -6,6 +6,102 @@
 	},
 	"item": [
 		{
+			"name": "device_code",
+			"item": [
+				{
+					"name": "get device code",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "scope",
+									"value": "openid",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8181/oauth2/device_authorize",
+							"host": [
+								"localhost"
+							],
+							"port": "8181",
+							"path": [
+								"oauth2",
+								"device_authorize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login by device code",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "urn:ietf:params:oauth:grant-type:device_code",
+									"type": "text"
+								},
+								{
+									"key": "urn:ietf:params:oauth:grant-type:device_code",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "openid",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8181/oauth2/token",
+							"host": [
+								"localhost"
+							],
+							"port": "8181",
+							"path": [
+								"oauth2",
+								"token"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "1593acd4-5ede-4376-b2d4-b2f6cf0bd664",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "ec5a471b-3fa1-4f27-8fe5-ea8316513680",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
 			"name": "login by password",
 			"request": {
 				"method": "POST",
