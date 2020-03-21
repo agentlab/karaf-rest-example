@@ -1,10 +1,102 @@
 {
 	"info": {
-		"_postman_id": "c9d5e713-2d60-4a93-9250-f95a955bf063",
+		"_postman_id": "7f158de0-8ae4-4ed0-bd19-b7db9814cb09",
 		"name": "oauth",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "code_flow",
+			"item": [
+				{
+					"name": "getCode(client request)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:9443/oauth2/authorize?response_type=code&client_id=Ynio_EuYVk8j2gn_6nUbIVQbj_Aa&state=qmfiklwejgerwqempo&scope=openid&redirect_uri=https://localhost:9090/lol",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "9443",
+							"path": [
+								"oauth2",
+								"authorize"
+							],
+							"query": [
+								{
+									"key": "response_type",
+									"value": "code"
+								},
+								{
+									"key": "client_id",
+									"value": "Ynio_EuYVk8j2gn_6nUbIVQbj_Aa"
+								},
+								{
+									"key": "state",
+									"value": "qmfiklwejgerwqempo"
+								},
+								{
+									"key": "code_verifier",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "scope",
+									"value": "openid"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "https://localhost:9090/lol"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "exchangeCode",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "https://localhost:9090/lol",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:8181/oauth2/token",
+							"host": [
+								"localhost"
+							],
+							"port": "8181",
+							"path": [
+								"oauth2",
+								"token"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
 		{
 			"name": "device_code",
 			"item": [
@@ -20,6 +112,12 @@
 									"key": "scope",
 									"value": "openid",
 									"type": "text"
+								},
+								{
+									"key": "promt",
+									"value": "none",
+									"type": "text",
+									"disabled": true
 								}
 							]
 						},
@@ -52,7 +150,7 @@
 								},
 								{
 									"key": "urn:ietf:params:oauth:grant-type:device_code",
-									"value": "",
+									"value": "6ff0dd81-b8ee-4516-9deb-ab139dc71eb7",
 									"type": "text"
 								},
 								{
