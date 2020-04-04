@@ -26,6 +26,7 @@
         <module>karaf-rest-api</module>
         <module>karaf-rest-features</module>
         <module>karaf-rest-whiteboard</module>
+        <module>ru.agentlab.cors</module>
         <module>ru.agentlab.jwt.service</module>
         <module>ru.agentlab.oauth</module>
         <module>ru.agentlab.oauth.commons</module>
