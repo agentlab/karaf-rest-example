@@ -9,6 +9,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,12 +18,17 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.CookieParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.NameValuePair;
@@ -36,31 +42,37 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Strings;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
-import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.RefreshTokenGrant;
 import com.nimbusds.oauth2.sdk.ResourceOwnerPasswordCredentialsGrant;
-import com.nimbusds.oauth2.sdk.ResponseType;
 import com.nimbusds.oauth2.sdk.Scope;
+import com.nimbusds.oauth2.sdk.TokenIntrospectionRequest;
+import com.nimbusds.oauth2.sdk.TokenIntrospectionResponse;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.TokenRevocationRequest;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretPost;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.device.DeviceCode;
 import com.nimbusds.oauth2.sdk.device.DeviceCodeGrant;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
+import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
-import com.nimbusds.oauth2.sdk.id.State;
-import com.nimbusds.oauth2.sdk.pkce.CodeChallengeMethod;
 import com.nimbusds.oauth2.sdk.pkce.CodeVerifier;
+import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
+import com.nimbusds.oauth2.sdk.token.Token;
+import com.nimbusds.openid.connect.sdk.UserInfoRequest;
+import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 
 import ru.agentlab.oauth.IAuthService;
 import ru.agentlab.oauth.commons.IAuthServerProvider;
@@ -72,7 +84,8 @@ public class AuthServiceImpl implements IAuthService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    private final ClientSecretPost clientAuth;
+    private final ClientSecretPost clientAuthPost;
+    private final ClientAuthentication clientAuthBasic;
 
     @Reference
     private IAuthServerProvider authServerProvider;
@@ -83,7 +96,8 @@ public class AuthServiceImpl implements IAuthService {
         ClientID clientId = new ClientID(getEnv("CLIENT_ID", "Ynio_EuYVk8j2gn_6nUbIVQbj_Aa"));
         Secret clientSecret = new Secret(getEnv("CLIENT_SECRET", "fTJGvvfJjUkWvn8R_NY8zXSyYQ0a"));
 
-        clientAuth = new ClientSecretPost(clientId, clientSecret);
+        clientAuthPost = new ClientSecretPost(clientId, clientSecret);
+        clientAuthBasic = new ClientSecretBasic(clientId, clientSecret);
 
         disableSSLVerification();
     }
@@ -138,6 +152,162 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+
+    @Override
+    @POST
+    @Path("/revoke")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revokeToken(Form form, @CookieParam(OAuthConstants.ACCESS_TOKEN) String accessTokenCookie,
+            @CookieParam(OAuthConstants.REFRESH_TOKEN) String refreshTokenCookie) {
+
+        MultivaluedMap<String, String> formParams = form.asMap();
+
+        List<String> tokenType = formParams.get(OAuthConstants.TOKEN_TYPE_HINT);
+
+        if (tokenType == null || tokenType.isEmpty() || tokenType.size() > 2) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        String tokenFromForm = formParams.getFirst(OAuthConstants.TOKEN);
+
+        Token token;
+        NewCookie resetCookie;
+
+        if (OAuthConstants.ACCESS_TOKEN.equals(tokenType.get(0))) {
+            String accessToken = isNullOrEmpty(accessTokenCookie) ? tokenFromForm : accessTokenCookie;
+            if (isNullOrEmpty(accessToken)) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            } else {
+                token = new BearerAccessToken(accessToken);
+                resetCookie = createTokenCookie(OAuthConstants.ACCESS_TOKEN, "", 0);
+            }
+        } else if (OAuthConstants.REFRESH_TOKEN.equals(tokenType.get(0))) {
+            String refreshToken = isNullOrEmpty(refreshTokenCookie) ? tokenFromForm : refreshTokenCookie;
+            if (isNullOrEmpty(refreshToken)) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            } else {
+                token = new RefreshToken(refreshToken);
+                resetCookie = createTokenCookie(OAuthConstants.REFRESH_TOKEN, "", 0);
+            }
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        TokenRevocationRequest revokeRequest = new TokenRevocationRequest(authServerProvider.getTokenRevocationUrl(),
+                clientAuthPost, token);
+        HTTPResponse response = null;
+        try {
+            response = revokeRequest.toHTTPRequest().send();
+            if (response.indicatesSuccess()) {
+                return Response.ok().cookie(resetCookie).build();
+            }
+
+            return Response.status(response.getStatusCode()).entity(response.getContent()).build();
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Override
+    @GET
+    @Path("/userinfo")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response userInfo(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @CookieParam(OAuthConstants.ACCESS_TOKEN) String accessTokenCookie) {
+
+        BearerAccessToken bearerAccessToken = null;
+
+        if (!isNullOrEmpty(accessTokenCookie)) {
+            bearerAccessToken = new BearerAccessToken(accessTokenCookie);
+        }
+
+        if (bearerAccessToken == null) {
+            try {
+                bearerAccessToken = BearerAccessToken.parse(authorizationHeader);
+            } catch (ParseException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        }
+
+        if (bearerAccessToken == null) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        try {
+            HTTPResponse httpResponse = new UserInfoRequest(authServerProvider.getUserInfoUrl(), bearerAccessToken)
+                    .toHTTPRequest().send();
+            UserInfoResponse userInfoResponse = UserInfoResponse.parse(httpResponse);
+
+            if (!userInfoResponse.indicatesSuccess()) {
+                ErrorObject errorObject = userInfoResponse.toErrorResponse().getErrorObject();
+                return Response.status(errorObject.getHTTPStatusCode()).entity(errorObject.getDescription()).build();
+            }
+
+            return Response.ok().entity(userInfoResponse.toSuccessResponse().getUserInfo().toJSONString()).build();
+
+        } catch (IOException | ParseException e) {
+            LOGGER.error(e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Override
+    @POST
+    @Path("/introspect")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response introspectToken(Form form, @CookieParam(OAuthConstants.ACCESS_TOKEN) String accessTokenCookie,
+            @CookieParam(OAuthConstants.REFRESH_TOKEN) String refreshTokenCookie) {
+        MultivaluedMap<String, String> formParams = form.asMap();
+
+        List<String> tokenType = formParams.get(OAuthConstants.TOKEN_TYPE_HINT);
+
+        if (tokenType == null || tokenType.isEmpty() || tokenType.size() > 2) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        String tokenFromForm = formParams.getFirst(OAuthConstants.TOKEN);
+
+        Token token;
+
+        if (OAuthConstants.ACCESS_TOKEN.equals(tokenType.get(0))) {
+            String accessToken = isNullOrEmpty(accessTokenCookie) ? tokenFromForm : accessTokenCookie;
+            if (isNullOrEmpty(accessToken)) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            } else {
+                token = new BearerAccessToken(accessToken);
+            }
+        } else if (OAuthConstants.REFRESH_TOKEN.equals(tokenType.get(0))) {
+            String refreshToken = isNullOrEmpty(refreshTokenCookie) ? tokenFromForm : refreshTokenCookie;
+            if (isNullOrEmpty(refreshToken)) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            } else {
+                token = new RefreshToken(refreshToken);
+            }
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+
+        TokenIntrospectionRequest introspectionRequest = new TokenIntrospectionRequest(
+                authServerProvider.getTokenIntrospectionUrl(), clientAuthBasic, token);
+        try {
+            TokenIntrospectionResponse response = TokenIntrospectionResponse
+                    .parse(introspectionRequest.toHTTPRequest().send());
+
+            if (!response.indicatesSuccess()) {
+                ErrorObject errorObject = response.toErrorResponse().getErrorObject();
+                return Response.status(errorObject.getHTTPStatusCode()).entity(errorObject.getDescription()).build();
+            }
+
+            return Response.ok().entity(response.toSuccessResponse().toJSONObject().toJSONString()).build();
+        } catch (IOException | ParseException e) {
+            LOGGER.error(e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+
     }
 
     private Response clientCredentialsGrantFlow(Form form) {
@@ -217,8 +387,8 @@ public class AuthServiceImpl implements IAuthService {
 
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("scope", getRequestedScopes(form).toString()));
-        params.add(new BasicNameValuePair("client_id", clientAuth.getClientID().getValue()));
-        params.add(new BasicNameValuePair("client_secret", clientAuth.getClientSecret().getValue()));
+        params.add(new BasicNameValuePair("client_id", clientAuthPost.getClientID().getValue()));
+        params.add(new BasicNameValuePair("client_secret", clientAuthPost.getClientSecret().getValue()));
 
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(params));
@@ -246,7 +416,7 @@ public class AuthServiceImpl implements IAuthService {
 
     private Response performAuthorizationGrantOperation(AuthorizationGrant grant, Scope scopes) {
 
-        TokenRequest request = new TokenRequest(authServerProvider.getTokenUrl(), clientAuth, grant, scopes);
+        TokenRequest request = new TokenRequest(authServerProvider.getTokenUrl(), clientAuthPost, grant, scopes);
 
         TokenResponse response = null;
         try {
@@ -264,12 +434,27 @@ public class AuthServiceImpl implements IAuthService {
 
         AccessTokenResponse successResponse = response.toSuccessResponse();
 
-        return Response.ok().entity(successResponse.getTokens().toString()).build();
+        String accessToken = successResponse.getTokens().getBearerAccessToken().getValue();
+        String refreshToken = successResponse.getTokens().getRefreshToken().getValue();
+
+        // TODO: expire time
+        NewCookie accessTokenCookie = createTokenCookie(OAuthConstants.ACCESS_TOKEN, accessToken, 3600);
+        NewCookie refreshTokenCookie = createTokenCookie(OAuthConstants.REFRESH_TOKEN, refreshToken, 86400);
+
+        return Response.ok().cookie(accessTokenCookie, refreshTokenCookie)
+                .entity(successResponse.getTokens().toString()).build();
+    }
+
+    private NewCookie createTokenCookie(String tokenTypeHint, String token, int maxAge) {
+        Calendar expireTime = Calendar.getInstance();
+        expireTime.add(Calendar.SECOND, maxAge);
+        return new NewCookie(tokenTypeHint, token, "/", null, NewCookie.DEFAULT_VERSION, null, maxAge,
+                expireTime.getTime(), false, true);
     }
 
     private boolean isBadRequest(String... params) {
         for (String param : params) {
-            if (Strings.isNullOrEmpty(param)) {
+            if (isNullOrEmpty(param)) {
                 return true;
             }
         }

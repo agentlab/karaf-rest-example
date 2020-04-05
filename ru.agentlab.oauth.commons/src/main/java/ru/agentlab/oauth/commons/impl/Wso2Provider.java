@@ -22,9 +22,13 @@ public class Wso2Provider implements IAuthServerProvider {
 
     private static final String TOKEN_ENDPOINT = WSO2_URL + "/oauth2/token";
 
-    private static final String TOKEN_INTROSPECT_ENDPOINT = WSO2_URL + "/oauth2/introspect";
+    private static final String TOKEN_INTROSPECTION_ENDPOINT = WSO2_URL + "/oauth2/introspect";
 
     private static final String DEVICE_AUTH_ENDPOINT = WSO2_URL + "/oauth2/device_authorize";
+
+    private static final String TOKEN_REVOCATION_ENDPOINT = WSO2_URL + "/oauth2/revoke";
+    
+    private static final String TOKEN_USERINFO_ENDPOINT = WSO2_URL + "/oauth2/userinfo";
 
     @Override
     public URI getServeBaserUrl() {
@@ -42,13 +46,23 @@ public class Wso2Provider implements IAuthServerProvider {
     }
 
     @Override
-    public URI getTokenIntrospectUrl() {
-        return getUri(TOKEN_INTROSPECT_ENDPOINT);
+    public URI getTokenIntrospectionUrl() {
+        return getUri(TOKEN_INTROSPECTION_ENDPOINT);
     }
 
     @Override
     public URI getDeviceAuthorizationEndpoint() {
         return getUri(DEVICE_AUTH_ENDPOINT);
+    }
+
+    @Override
+    public URI getTokenRevocationUrl() {
+        return getUri(TOKEN_REVOCATION_ENDPOINT);
+    }
+    
+    @Override
+    public URI getUserInfoUrl() {
+        return getUri(TOKEN_USERINFO_ENDPOINT);
     }
 
     private URI getUri(String uri) {

@@ -23,7 +23,10 @@ public class CorsFilter implements ContainerResponseFilter {
         headers.add("Access-Control-Allow-Origin", "*");
         headers.addAll("Access-Control-Allow-Methods", HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
                 HttpMethod.DELETE, HttpMethod.OPTIONS, HttpMethod.HEAD);
-        headers.addAll("Access-Control-Allow-Headers", "origin, content-type, accept, authorization, user-agent");
-
+        headers.addAll("Access-Control-Allow-Headers",
+                "origin, content-type, accept, authorization, user-agent, cookie");
+        headers.addAll("Access-Control-Expose-Headers",
+                "Set-Cookie, Cache-Control, Content-Language, Content-Length, Content-Type, Expires, Last-Modified, Pragma");
+        headers.add("Access-Control-Max-Age", 86400);
     }
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -37,12 +38,23 @@ public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<Authe
     public void filter(ContainerRequestContext requestContext) throws IOException {
 
         if (!uriInfo.getPath().contains("oauth2/")) {
+
             String accessToken = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
+
+            Cookie accessTokenCookie = requestContext.getCookies().get(OAuthConstants.ACCESS_TOKEN);
+
             if (!Strings.isNullOrEmpty(accessToken)) {
                 securityService.setSubject(accessToken);
-            } else {
-                requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
+                return;
+            } else if (accessTokenCookie != null) {
+                String accessTokenFromCookie = accessTokenCookie.getValue();
+                if (!Strings.isNullOrEmpty(accessTokenFromCookie)) {
+                    securityService.setSubject(accessTokenFromCookie);
+                    return;
+                }
             }
+
+            requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
 

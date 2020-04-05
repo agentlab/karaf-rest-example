@@ -48,7 +48,6 @@ public class SecurityServiceImpl implements ISecurityService {
     private IJwtService jwtService;
 
     public SecurityServiceImpl() {
-
         realm = new BearerRealm();
         realm.setCachingEnabled(false);
 
