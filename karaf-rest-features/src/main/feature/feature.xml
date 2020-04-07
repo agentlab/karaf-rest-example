@@ -54,8 +54,6 @@
 
         <bundle dependency="true">mvn:com.nimbusds/nimbus-jose-jwt/${nimbus-jose-jwt.version} </bundle>
 
-        <bundle dependency="true">wrap:mvn:com.google.crypto.tink/tink/${tink.version} </bundle>
-
         <bundle dependency="true">wrap:mvn:net.jcip/jcip-annotations/${jcip-annotations.version}</bundle>
 
         <bundle dependency="true">mvn:net.minidev/json-smart/${json-smart.version} </bundle>

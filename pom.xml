@@ -115,11 +115,6 @@
                 <version>${nimbus-jose-jwt.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.crypto.tink</groupId>
-                <artifactId>tink</artifactId>
-                <version>${tink.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>net.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
                 <version>${jcip-annotations.version}</version>
