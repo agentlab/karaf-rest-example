@@ -56,10 +56,17 @@
         <javax.mail-api.version>1.6.2</javax.mail-api.version>
         <shiro-core.version>1.5.0</shiro-core.version>
         <sl4j.version>1.5.0</sl4j.version>
+        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax.servlet-api.version}</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>

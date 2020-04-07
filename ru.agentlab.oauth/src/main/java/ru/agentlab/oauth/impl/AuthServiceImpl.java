@@ -9,6 +9,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.GET;
@@ -24,6 +27,7 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -43,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+
+import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
@@ -91,6 +97,9 @@ public class AuthServiceImpl implements IAuthService {
     private IAuthServerProvider authServerProvider;
     @Reference
     private IHttpClientProvider httpClientProvider;
+
+    @Context
+    private HttpServletRequest requestContext;
 
     public AuthServiceImpl() {
         ClientID clientId = new ClientID(getEnv("CLIENT_ID", "Ynio_EuYVk8j2gn_6nUbIVQbj_Aa"));
@@ -164,9 +173,9 @@ public class AuthServiceImpl implements IAuthService {
 
         MultivaluedMap<String, String> formParams = form.asMap();
 
-        List<String> tokenType = formParams.get(OAuthConstants.TOKEN_TYPE_HINT);
+        String tokenType = formParams.getFirst(OAuthConstants.TOKEN_TYPE_HINT);
 
-        if (tokenType == null || tokenType.isEmpty() || tokenType.size() > 2) {
+        if (Strings.isNullOrEmpty(tokenType)) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
@@ -175,7 +184,7 @@ public class AuthServiceImpl implements IAuthService {
         Token token;
         NewCookie resetCookie;
 
-        if (OAuthConstants.ACCESS_TOKEN.equals(tokenType.get(0))) {
+        if (OAuthConstants.ACCESS_TOKEN.equals(tokenType)) {
             String accessToken = isNullOrEmpty(accessTokenCookie) ? tokenFromForm : accessTokenCookie;
             if (isNullOrEmpty(accessToken)) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
@@ -183,7 +192,7 @@ public class AuthServiceImpl implements IAuthService {
                 token = new BearerAccessToken(accessToken);
                 resetCookie = createTokenCookie(OAuthConstants.ACCESS_TOKEN, "", 0);
             }
-        } else if (OAuthConstants.REFRESH_TOKEN.equals(tokenType.get(0))) {
+        } else if (OAuthConstants.REFRESH_TOKEN.equals(tokenType)) {
             String refreshToken = isNullOrEmpty(refreshTokenCookie) ? tokenFromForm : refreshTokenCookie;
             if (isNullOrEmpty(refreshToken)) {
                 return Response.status(Response.Status.BAD_REQUEST).build();
@@ -310,6 +319,12 @@ public class AuthServiceImpl implements IAuthService {
 
     }
 
+    private Optional<String> getCookieByName(String name) {
+        List<Cookie> cookies = Arrays.asList(Optional.ofNullable(requestContext.getCookies()).orElse(new Cookie[0]));
+        return cookies.stream().filter(cookie -> name.equals(cookie.getName())).findAny()
+                .map(cookie -> cookie.getValue());
+    }
+
     private Response clientCredentialsGrantFlow(Form form) {
         String username = form.asMap().getFirst("username");
         String password = form.asMap().getFirst("password");
@@ -325,7 +340,8 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     private Response refreshTokenGrantFlow(Form form) {
-        String refreshToken = form.asMap().getFirst("refresh_token");
+        String refreshToken = getCookieByName(OAuthConstants.REFRESH_TOKEN)
+                .orElse(form.asMap().getFirst(OAuthConstants.REFRESH_TOKEN));
 
         if (isBadRequest(refreshToken)) {
             return Response.status(Response.Status.BAD_REQUEST).build();

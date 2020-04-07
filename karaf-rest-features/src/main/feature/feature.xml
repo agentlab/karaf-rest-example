@@ -69,6 +69,8 @@
 
         <bundle dependency="true">mvn:org.slf4j/slf4j-api/${sl4j.version} </bundle>
 
+        <bundle dependency="true">mvn:javax.servlet/javax.servlet-api/${javax.servlet-api.version} </bundle>
+
     </feature>
 
 </features>
