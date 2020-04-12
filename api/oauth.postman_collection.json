@@ -14,10 +14,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://localhost:9443/oauth2/authorize?response_type=code&client_id=Ynio_EuYVk8j2gn_6nUbIVQbj_Aa&state=qmfiklwejgerwqempo&scope=openid&redirect_uri=https://localhost:9090/lol",
+							"raw": "https://example.com:9443/oauth2/authorize?response_type=code&client_id=Ynio_EuYVk8j2gn_6nUbIVQbj_Aa&state=qmfiklwejgerwqempo&scope=openid&redirect_uri=http://example.com:3000/oauth20/callback",
 							"protocol": "https",
 							"host": [
-								"localhost"
+								"example",
+								"com"
 							],
 							"port": "9443",
 							"path": [
@@ -48,7 +49,7 @@
 								},
 								{
 									"key": "redirect_uri",
-									"value": "https://localhost:9090/lol"
+									"value": "http://example.com:3000/oauth20/callback"
 								}
 							]
 						}
@@ -70,20 +71,21 @@
 								},
 								{
 									"key": "code",
-									"value": "",
+									"value": "920d44b1-48ac-3bab-95f0-02ca3f9c81ed",
 									"type": "text"
 								},
 								{
 									"key": "redirect_uri",
-									"value": "https://localhost:9090/lol",
+									"value": "http://example.com:3000/oauth20/callback",
 									"type": "text"
 								}
 							]
 						},
 						"url": {
-							"raw": "localhost:8181/oauth2/token",
+							"raw": "example.com:8181/oauth2/token",
 							"host": [
-								"localhost"
+								"example",
+								"com"
 							],
 							"port": "8181",
 							"path": [
@@ -122,9 +124,10 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8181/oauth2/device_authorize",
+							"raw": "example.com:8181/oauth2/device_authorize",
 							"host": [
-								"localhost"
+								"example",
+								"com"
 							],
 							"port": "8181",
 							"path": [
@@ -150,7 +153,7 @@
 								},
 								{
 									"key": "urn:ietf:params:oauth:grant-type:device_code",
-									"value": "6ff0dd81-b8ee-4516-9deb-ab139dc71eb7",
+									"value": "16b28b42-9f87-4295-bace-8f676f8506f7",
 									"type": "text"
 								},
 								{
@@ -161,9 +164,10 @@
 							]
 						},
 						"url": {
-							"raw": "localhost:8181/oauth2/token",
+							"raw": "example.com:8181/oauth2/token",
 							"host": [
-								"localhost"
+								"example",
+								"com"
 							],
 							"port": "8181",
 							"path": [
@@ -230,9 +234,10 @@
 					]
 				},
 				"url": {
-					"raw": "localhost:8181/oauth2/token",
+					"raw": "localhost.test:8181/oauth2/token",
 					"host": [
-						"localhost"
+						"localhost",
+						"test"
 					],
 					"port": "8181",
 					"path": [
@@ -258,15 +263,16 @@
 						},
 						{
 							"key": "refresh_token",
-							"value": "ac7cf328-73f9-3781-afeb-198c0a1b3308",
+							"value": "f6351bad-ec29-3c2d-869d-7264d81d505c",
 							"type": "text"
 						}
 					]
 				},
 				"url": {
-					"raw": "localhost:8181/oauth2/token",
+					"raw": "example.com:8181/oauth2/token",
 					"host": [
-						"localhost"
+						"example",
+						"com"
 					],
 					"port": "8181",
 					"path": [
@@ -284,18 +290,124 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "Bearer eyJ4NXQiOiJaalJtWVRNd0USmpPV1U1TW1Jek1qZ3pOREkzWTJJeU1tSXlZMkV6TWpkaFpqVmlNamMwWmciLCJraWQiOiJaalJtWVRNd05USmpPV1U1TW1Jek1qZ3pOREkzWTJJeU1tSXlZMkV6TWpkaFpqVmlNamMwWmdfUlMyNTYiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImF1ZCI6IjJkdnc5c0VfbGw4MWFLUXM5MzhIXzV5QVNPY2EiLCJuYmYiOjE1ODExOTAwNjAsImF6cCI6IjJkdnc5c0VfbGw4MWFLUXM5MzhIXzV5QVNPY2EiLCJpc3MiOiJodHRwczpcL1wvbG9jYWxob3N0Ojk0NDNcL29hdXRoMlwvdG9rZW4iLCJleHAiOjE1ODExOTM2NjAsImlhdCI6MTU4MTE5MDA2MCwianRpIjoiZTY2N2IzZWMtMzBiZi00YzgxLWI3MjgtNWM1MjI2NGJlMTZlIn0.LmNtVmGloZHcRuV3pZellfeY6dkZy8l0mlVVbJDvi5woyV-0PvCGAXB7BGoRC-2mGliJmw7rbFTIC-ZP-r05ZAFo_e_1TzHG69Bjqd48VaXhbQOlZme45XMCYa3bb2RnACrVV33Q6QcttWei9iUzXtkU-4ooioRG_P1eFFEMtCAwzYYEa1WwYc4leuDw2kohEiwkTTHiZyB5aqNKZ2p0j2EKM35yuq6z184psL6sdeW6xzKA2CHd_CgfD7yUJSsaqHtSz_dUWkpABiJWCi4_G9UR7yPIznXPviDzZojR7nntiFiSBC-g3wuQ7Uh07NInoEKjKtDUvL7Bxa2NpLv19g",
-						"type": "text"
+						"value": "Bearer eyJ4NXQiOiJNell4TW1Ga09HWXdNV0kwWldObU5EY3hOR1l3WW1NNFpUQTNNV0kyTkRBelpHUXpOR00wWkdSbE5qSmtPREZrWkRSaU9URmtNV0ZoTXpVMlpHVmxOZyIsImtpZCI6Ik16WXhNbUZrT0dZd01XSTBaV05tTkRjeE5HWXdZbU00WlRBM01XSTJOREF6WkdRek5HTTBaR1JsTmpKa09ERmtaRFJpT1RGa01XRmhNelUyWkdWbE5nX1JTMjU2IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ0ZXN0dXNlciIsImF1ZCI6IlluaW9fRXVZVms4ajJnbl82blViSVZRYmpfQWEiLCJuYmYiOjE1ODYxMTkxMzUsImF6cCI6IlluaW9fRXVZVms4ajJnbl82blViSVZRYmpfQWEiLCJzY29wZSI6Im9wZW5pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsIm5hbWUiOiJ0ZXN0dXNlciIsImdyb3VwcyI6WyJJbnRlcm5hbFwvc3lzdGVtIiwiSW50ZXJuYWxcL2V2ZXJ5b25lIiwiZGVtb192ZXJzaW9uIl0sImV4cCI6MTU4NjEyMjczNSwiaWF0IjoxNTg2MTE5MTM1LCJqdGkiOiJmZDEzNzVmZS0zZGMyLTQzNjMtYjhmNS1kYTdjZTllZWQwYWEiLCJlbWFpbCI6InRlc3R1c2VyQG1haWwucnUifQ.U-COhomPgvURWJXTMb8NjtQJ7haJp4reh7HRHpB8Arha3AllW1tl9MluLMKBc1jYC7rEcq9GQsldYmXcU5mEK1qJYDNjCyk4WXiBF9HB9QLkcw3WOanXze1kUi1Quy59lx6aTiQtL4JBa2R_pw3_ZSwUdSsF2MLCAKW7mATkaodFV0ET2EZ_niQIbSXJ6brZhW4yYo-PuzAzWguDBOVcp-hKTlg8C2UfuK3u2L32Bvesmy-mf2T87nWcF15uJeooum5QZJz7Pb1cQdXofoB2MMX8U1vVS57DfXEKF7xq7glgOnGURX8vbOVVLwrvGdzlrfiJbcOjnS8wevfrWdJJ0A",
+						"type": "text",
+						"disabled": true
 					}
 				],
 				"url": {
-					"raw": "localhost:8181/booking",
+					"raw": "example.com:8181/booking",
 					"host": [
-						"localhost"
+						"example",
+						"com"
 					],
 					"port": "8181",
 					"path": [
 						"booking"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "revoke",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "token_type_hint",
+							"value": "access_token",
+							"type": "text"
+						},
+						{
+							"key": "token",
+							"value": "eyJ4NXQiOiJNell4TW1Ga09HWXdNV0kwWldObU5EY3hOR1l3WW1NNFpUQTNNV0kyTkRBelpHUXpOR00wWkdSbE5qSmtPREZrWkRSaU9URmtNV0ZoTXpVMlpHVmxOZyIsImtpZCI6Ik16WXhNbUZrT0dZd01XSTBaV05tTkRjeE5HWXdZbU00WlRBM01XSTJOREF6WkdRek5HTTBaR1JsTmpKa09ERmtaRFJpT1RGa01XRmhNelUyWkdWbE5nX1JTMjU2IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ0ZXN0dXNlciIsImF1ZCI6IlluaW9fRXVZVms4ajJnbl82blViSVZRYmpfQWEiLCJuYmYiOjE1ODYxMTkxMzUsImF6cCI6IlluaW9fRXVZVms4ajJnbl82blViSVZRYmpfQWEiLCJzY29wZSI6Im9wZW5pZCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsIm5hbWUiOiJ0ZXN0dXNlciIsImdyb3VwcyI6WyJJbnRlcm5hbFwvc3lzdGVtIiwiSW50ZXJuYWxcL2V2ZXJ5b25lIiwiZGVtb192ZXJzaW9uIl0sImV4cCI6MTU4NjEyMjczNSwiaWF0IjoxNTg2MTE5MTM1LCJqdGkiOiJmZDEzNzVmZS0zZGMyLTQzNjMtYjhmNS1kYTdjZTllZWQwYWEiLCJlbWFpbCI6InRlc3R1c2VyQG1haWwucnUifQ.U-COhomPgvURWJXTMb8NjtQJ7haJp4reh7HRHpB8Arha3AllW1tl9MluLMKBc1jYC7rEcq9GQsldYmXcU5mEK1qJYDNjCyk4WXiBF9HB9QLkcw3WOanXze1kUi1Quy59lx6aTiQtL4JBa2R_pw3_ZSwUdSsF2MLCAKW7mATkaodFV0ET2EZ_niQIbSXJ6brZhW4yYo-PuzAzWguDBOVcp-hKTlg8C2UfuK3u2L32Bvesmy-mf2T87nWcF15uJeooum5QZJz7Pb1cQdXofoB2MMX8U1vVS57DfXEKF7xq7glgOnGURX8vbOVVLwrvGdzlrfiJbcOjnS8wevfrWdJJ0A",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "token_type_hint",
+							"value": "refresh_token",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "example.com:8181/oauth2/revoke",
+					"host": [
+						"example",
+						"com"
+					],
+					"port": "8181",
+					"path": [
+						"oauth2",
+						"revoke"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "userInfo",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "example.com:8181/oauth2/userinfo",
+					"host": [
+						"example",
+						"com"
+					],
+					"port": "8181",
+					"path": [
+						"oauth2",
+						"userinfo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "introspect",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "token_type_hint",
+							"value": "access_token",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "token",
+							"value": "",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "token_type_hint",
+							"value": "refresh_token",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "example.com:8181/oauth2/introspect",
+					"host": [
+						"example",
+						"com"
+					],
+					"port": "8181",
+					"path": [
+						"oauth2",
+						"introspect"
 					]
 				}
 			},
