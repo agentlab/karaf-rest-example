@@ -13,7 +13,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.util.EntityUtils;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
@@ -41,25 +40,14 @@ import ru.agentlab.oauth.commons.IHttpClientProvider;
 public class TokenServiceImpl implements IJwtService {
     private static final Logger LOGGER = LoggerFactory.getLogger(TokenServiceImpl.class);
 
-    private ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
+    private volatile ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
+
+    private Object lock = new Object();
 
     @Reference
     private IAuthServerProvider authServerProvider;
     @Reference
     private IHttpClientProvider httpClientProvider;
-
-    @Activate
-    public void activate() {
-        try {
-            ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
-            JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(authServerProvider.getServerJwksUrl().toURL(),
-                    new JwkResourceRetriever());
-            jwtProcessor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, keySource));
-            this.jwtProcessor = jwtProcessor;
-        } catch (MalformedURLException e) {
-            LOGGER.error(e.getMessage(), e);
-        }
-    }
 
     @Override
     public boolean isValid(String jwt) throws JwtException {
@@ -68,7 +56,7 @@ public class TokenServiceImpl implements IJwtService {
             return false;
 
         try {
-            jwtProcessor.process(preProcessToken(jwt), null);
+            getJwtProcessor().process(preProcessToken(jwt), null);
         } catch (ParseException | BadJOSEException | JOSEException e) {
             throw new JwtException(e.getMessage(), e);
         }
@@ -82,7 +70,7 @@ public class TokenServiceImpl implements IJwtService {
             return null;
 
         try {
-            return jwtProcessor.process(preProcessToken(jwt), null).toJSONObject().toString();
+            return getJwtProcessor().process(preProcessToken(jwt), null).toJSONObject().toString();
         } catch (ParseException | BadJOSEException | JOSEException e) {
 
             throw new JwtException(e.getMessage(), e);
@@ -96,12 +84,32 @@ public class TokenServiceImpl implements IJwtService {
             return null;
 
         try {
-            Map<String, Object> claimsMap = jwtProcessor.process(preProcessToken(jwt), null).getClaims();
+            Map<String, Object> claimsMap = getJwtProcessor().process(preProcessToken(jwt), null).getClaims();
 
             return claimsMap;
         } catch (ParseException | BadJOSEException | JOSEException e) {
             throw new JwtException(e.getMessage(), e);
         }
+    }
+
+    private ConfigurableJWTProcessor<SecurityContext> getJwtProcessor() {
+        if (jwtProcessor == null) {
+            synchronized (lock) {
+                if (jwtProcessor != null)
+                    return jwtProcessor;
+                try {
+                    ConfigurableJWTProcessor<SecurityContext> jwtProcessor = new DefaultJWTProcessor<>();
+                    JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(authServerProvider.getJWKSetURI().toURL(),
+                            new JwkResourceRetriever());
+                    jwtProcessor.setJWSKeySelector(new JWSVerificationKeySelector<>(JWSAlgorithm.RS256, keySource));
+                    this.jwtProcessor = jwtProcessor;
+                } catch (MalformedURLException e) {
+                    LOGGER.error(e.getMessage(), e);
+                }
+            }
+        }
+
+        return jwtProcessor;
     }
 
     private String preProcessToken(String token) {

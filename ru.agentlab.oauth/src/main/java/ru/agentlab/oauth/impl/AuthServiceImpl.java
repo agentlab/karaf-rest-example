@@ -204,7 +204,7 @@ public class AuthServiceImpl implements IAuthService {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
 
-        TokenRevocationRequest revokeRequest = new TokenRevocationRequest(authServerProvider.getTokenRevocationUrl(),
+        TokenRevocationRequest revokeRequest = new TokenRevocationRequest(authServerProvider.getRevocationEndpointURI(),
                 clientAuthPost, token);
         HTTPResponse response = null;
         try {
@@ -246,8 +246,8 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         try {
-            HTTPResponse httpResponse = new UserInfoRequest(authServerProvider.getUserInfoUrl(), bearerAccessToken)
-                    .toHTTPRequest().send();
+            HTTPResponse httpResponse = new UserInfoRequest(authServerProvider.getUserInfoEndpointURI(),
+                    bearerAccessToken).toHTTPRequest().send();
             UserInfoResponse userInfoResponse = UserInfoResponse.parse(httpResponse);
 
             if (!userInfoResponse.indicatesSuccess()) {
@@ -301,7 +301,7 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         TokenIntrospectionRequest introspectionRequest = new TokenIntrospectionRequest(
-                authServerProvider.getTokenIntrospectionUrl(), clientAuthBasic, token);
+                authServerProvider.getIntrospectionEndpointURI(), clientAuthBasic, token);
         try {
             TokenIntrospectionResponse response = TokenIntrospectionResponse
                     .parse(introspectionRequest.toHTTPRequest().send());
@@ -399,7 +399,7 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     private Optional<String> getDeviceCodeInfo(Form form) {
-        HttpPost httpPost = new HttpPost(authServerProvider.getDeviceAuthorizationEndpoint());
+        HttpPost httpPost = new HttpPost(authServerProvider.getDeviceAuthorizationEndpointURI());
 
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("scope", getRequestedScopes(form).toString()));
@@ -432,7 +432,8 @@ public class AuthServiceImpl implements IAuthService {
 
     private Response performAuthorizationGrantOperation(AuthorizationGrant grant, Scope scopes) {
 
-        TokenRequest request = new TokenRequest(authServerProvider.getTokenUrl(), clientAuthPost, grant, scopes);
+        TokenRequest request = new TokenRequest(authServerProvider.getTokenEndpointURI(), clientAuthPost, grant,
+                scopes);
 
         TokenResponse response = null;
         try {

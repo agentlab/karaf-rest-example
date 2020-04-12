@@ -20,11 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 
+import ru.agentlab.oauth.commons.AuthServerUnavailable;
 import ru.agentlab.security.ISecurityService;
 
 @Component(property = { "osgi.jaxrs.extension=true" })
 @Provider
-public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<AuthenticationException> {
+public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<RuntimeException> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpFilter.class);
 
@@ -59,8 +60,15 @@ public class HttpFilter implements ContainerRequestFilter, ExceptionMapper<Authe
     }
 
     @Override
-    public Response toResponse(AuthenticationException exception) {
+    public Response toResponse(RuntimeException exception) {
+
         LOGGER.error(exception.getMessage(), exception);
-        return Response.status(Response.Status.UNAUTHORIZED).build();
+
+        if (exception instanceof AuthenticationException) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        } else if (exception instanceof AuthServerUnavailable) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+        }
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
 }

@@ -4,17 +4,15 @@ import java.net.URI;
 
 public interface IAuthServerProvider {
 
-    URI getServeBaserUrl();
+    URI getJWKSetURI() throws AuthServerUnavailable;
 
-    URI getServerJwksUrl();
+    URI getTokenEndpointURI() throws AuthServerUnavailable;
 
-    URI getTokenUrl();
+    URI getIntrospectionEndpointURI() throws AuthServerUnavailable;
 
-    URI getTokenIntrospectionUrl();
+    URI getDeviceAuthorizationEndpointURI() throws AuthServerUnavailable;
 
-    URI getDeviceAuthorizationEndpoint();
-    
-    URI getTokenRevocationUrl();
-    
-    URI getUserInfoUrl();
+    URI getRevocationEndpointURI() throws AuthServerUnavailable;
+
+    URI getUserInfoEndpointURI() throws AuthServerUnavailable;
 }

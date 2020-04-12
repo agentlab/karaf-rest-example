@@ -1,13 +1,22 @@
 package ru.agentlab.oauth.commons.impl;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.nimbusds.oauth2.sdk.AbstractRequest;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.as.AuthorizationServerMetadata;
+import com.nimbusds.oauth2.sdk.http.HTTPResponse;
+import com.nimbusds.oauth2.sdk.id.Issuer;
+import com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest;
+import com.nimbusds.openid.connect.sdk.op.OIDCProviderEndpointMetadata;
+
+import ru.agentlab.oauth.commons.AuthServerUnavailable;
 import ru.agentlab.oauth.commons.IAuthServerProvider;
 
 @Component
@@ -18,61 +27,93 @@ public class Wso2Provider implements IAuthServerProvider {
     private static final int WSO2_PORT = getEnv("WSO2_PORT", Integer.class, 9443);
     private static final String WSO2_URL = WSO2_PROTOCOL + "://" + WSO2_HOST + ':' + WSO2_PORT;
 
-    private static final String JWKS_ENDPOINT = WSO2_URL + "/oauth2/jwks";
+    private static final String OIDC_DISCOVERY = WSO2_URL + "/oauth2/token";
 
-    private static final String TOKEN_ENDPOINT = WSO2_URL + "/oauth2/token";
+    private volatile AuthorizationServerMetadata authorizationMetadata;
+    private volatile OIDCProviderEndpointMetadata oidcMetadata;
 
-    private static final String TOKEN_INTROSPECTION_ENDPOINT = WSO2_URL + "/oauth2/introspect";
-
-    private static final String DEVICE_AUTH_ENDPOINT = WSO2_URL + "/oauth2/device_authorize";
-
-    private static final String TOKEN_REVOCATION_ENDPOINT = WSO2_URL + "/oauth2/revoke";
-    
-    private static final String TOKEN_USERINFO_ENDPOINT = WSO2_URL + "/oauth2/userinfo";
+    private Object lock = new Object();
 
     @Override
-    public URI getServeBaserUrl() {
-        return getUri(WSO2_URL);
+    public URI getJWKSetURI() {
+        return getAuthorizationMetadata().getJWKSetURI();
     }
 
     @Override
-    public URI getServerJwksUrl() {
-        return getUri(JWKS_ENDPOINT);
+    public URI getTokenEndpointURI() {
+        return getAuthorizationMetadata().getTokenEndpointURI();
     }
 
     @Override
-    public URI getTokenUrl() {
-        return getUri(TOKEN_ENDPOINT);
+    public URI getIntrospectionEndpointURI() {
+        return getAuthorizationMetadata().getIntrospectionEndpointURI();
     }
 
     @Override
-    public URI getTokenIntrospectionUrl() {
-        return getUri(TOKEN_INTROSPECTION_ENDPOINT);
+    public URI getDeviceAuthorizationEndpointURI() {
+        return getAuthorizationMetadata().getDeviceAuthorizationEndpointURI();
     }
 
     @Override
-    public URI getDeviceAuthorizationEndpoint() {
-        return getUri(DEVICE_AUTH_ENDPOINT);
+    public URI getRevocationEndpointURI() {
+        return getAuthorizationMetadata().getRevocationEndpointURI();
     }
 
     @Override
-    public URI getTokenRevocationUrl() {
-        return getUri(TOKEN_REVOCATION_ENDPOINT);
-    }
-    
-    @Override
-    public URI getUserInfoUrl() {
-        return getUri(TOKEN_USERINFO_ENDPOINT);
+    public URI getUserInfoEndpointURI() {
+        return getOidcMetadata().getUserInfoEndpointURI();
     }
 
-    private URI getUri(String uri) {
-        try {
-            return new URI(uri);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+    private AuthorizationServerMetadata getAuthorizationMetadata() {
+
+        if (authorizationMetadata == null) {
+
+            Issuer issuer = new Issuer(OIDC_DISCOVERY);
+            AbstractRequest oidcProviderConfigurationRequest = new OIDCProviderConfigurationRequest(issuer);
+
+            synchronized (lock) {
+                if (authorizationMetadata != null)
+                    return authorizationMetadata;
+                try {
+                    HTTPResponse response = oidcProviderConfigurationRequest.toHTTPRequest().send();
+                    if (response.indicatesSuccess()) {
+                        authorizationMetadata = AuthorizationServerMetadata.parse(response.getContentAsJSONObject());
+                    } else {
+                        throw new AuthServerUnavailable(response.getContent());
+                    }
+                } catch (ParseException | IOException e) {
+                    throw new AuthServerUnavailable(e.getMessage(), e);
+                }
+            }
         }
 
-        return null;
+        return authorizationMetadata;
+    }
+
+    private OIDCProviderEndpointMetadata getOidcMetadata() {
+
+        if (oidcMetadata == null) {
+
+            Issuer issuer = new Issuer(OIDC_DISCOVERY);
+            AbstractRequest oidcProviderConfigurationRequest = new OIDCProviderConfigurationRequest(issuer);
+
+            synchronized (lock) {
+                if (oidcMetadata != null)
+                    return oidcMetadata;
+                try {
+                    HTTPResponse response = oidcProviderConfigurationRequest.toHTTPRequest().send();
+                    if (response.indicatesSuccess()) {
+                        oidcMetadata = OIDCProviderEndpointMetadata.parse(response.getContentAsJSONObject());
+                    } else {
+                        throw new AuthServerUnavailable(response.getContent());
+                    }
+                } catch (ParseException | IOException e) {
+                    throw new AuthServerUnavailable(e.getMessage(), e);
+                }
+            }
+        }
+
+        return oidcMetadata;
     }
 
     private static <T> T getEnv(String key, Class<T> clazz, T def) {
